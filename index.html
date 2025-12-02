@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Deteksi Device</title>
+</head>
+<body>
+    <h1>Deteksi Device</h1>
+    <pre id="output"></pre>
+
+    <script>
+        function generateDeviceId() {
+            const KEY = 'MY_APP_DEVICE_ID';
+
+            // cek apakah sudah ada ID
+            let existing = localStorage.getItem(KEY);
+            if (existing) return existing;
+
+            // kalau belum ada, buat baru lalu simpan
+            const randomPart = Math.random().toString(36).substring(2, 10);
+            const timePart = Date.now().toString(36);
+            const newId = `DEV-${timePart}-${randomPart}`.toUpperCase();
+
+            localStorage.setItem(KEY, newId);
+            return newId;
+        }
+
+        function detectOS(ua) {
+            ua = ua || navigator.userAgent;
+            ua = ua.toLowerCase();
+
+            let osName = 'Unknown';
+            let osVersion = '';
+
+            if (ua.indexOf('android') !== -1) {
+                osName = 'Android';
+                const match = ua.match(/android\s([0-9._]+)/);
+                if (match) osVersion = match[1].replace(/_/g, '.');
+            } else if (/iphone|ipad|ipod/.test(ua)) {
+                osName = 'iOS';
+                const match = ua.match(/os\s([0-9_]+)\slike mac os x/);
+                if (match) osVersion = match[1].replace(/_/g, '.');
+            } else if (ua.indexOf('windows nt') !== -1) {
+                osName = 'Windows';
+                const match = ua.match(/windows nt\s([0-9._]+)/);
+                if (match) osVersion = match[1];
+            } else if (ua.indexOf('mac os x') !== -1) {
+                osName = 'macOS';
+                const match = ua.match(/mac os x\s([0-9._]+)/);
+                if (match) osVersion = match[1].replace(/_/g, '.');
+            } else if (ua.indexOf('linux') !== -1) {
+                osName = 'Linux';
+            }
+
+            return { osName, osVersion };
+        }
+
+        function detectBrowser(ua) {
+            ua = ua || navigator.userAgent;
+
+            let name = 'Unknown';
+            let version = '';
+
+            if (/Edg\//.test(ua)) {                        // Edge (Chromium)
+                name = 'Edge';
+                const m = ua.match(/Edg\/([\d.]+)/);
+                if (m) version = m[1];
+            } else if (/OPR\//.test(ua) || /Opera/.test(ua)) {
+                name = 'Opera';
+                const m = ua.match(/OPR\/([\d.]+)/) || ua.match(/Opera\/([\d.]+)/);
+                if (m) version = m[1];
+            } else if (/SamsungBrowser\//.test(ua)) {
+                name = 'Samsung Internet';
+                const m = ua.match(/SamsungBrowser\/([\d.]+)/);
+                if (m) version = m[1];
+            } else if (/Chrome\//.test(ua) && !/Chromium/.test(ua)) {
+                name = 'Chrome';
+                const m = ua.match(/Chrome\/([\d.]+)/);
+                if (m) version = m[1];
+            } else if (/Safari\//.test(ua) && /Version\//.test(ua)) {
+                name = 'Safari';
+                const m = ua.match(/Version\/([\d.]+)/);
+                if (m) version = m[1];
+            } else if (/Firefox\//.test(ua)) {
+                name = 'Firefox';
+                const m = ua.match(/Firefox\/([\d.]+)/);
+                if (m) version = m[1];
+            }
+
+            return { browserName: name, browserVersion: version };
+        }
+
+        function detectDeviceType(ua) {
+            ua = ua || navigator.userAgent;
+
+            if (/Tablet|iPad/i.test(ua)) {
+                return 'Tablet';
+            } else if (/Mobi|Android/i.test(ua)) {
+                return 'Mobile';
+            } else {
+                return 'Desktop';
+            }
+        }
+
+        function detectDeviceModel(ua) {
+            ua = ua || navigator.userAgent;
+
+            // Android: biasanya "Android 13; SM-S918B"
+            let match = ua.match(/Android [\d._]+; ([^;)+]+)/);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+
+            if (/iPhone/.test(ua)) return 'iPhone';
+            if (/iPad/.test(ua)) return 'iPad';
+            if (/iPod/.test(ua)) return 'iPod';
+
+            return '';
+        }
+
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            const { osName, osVersion } = detectOS(ua);
+            const { browserName, browserVersion } = detectBrowser(ua);
+            const deviceType = detectDeviceType(ua);
+            const deviceModel = detectDeviceModel(ua);
+            const deviceId = generateDeviceId();
+
+            return {
+                deviceId,
+                deviceType,        // Mobile / Tablet / Desktop
+                deviceModel,       // contoh: "SM-S918B" dll (kalau ketemu)
+                osName,
+                osVersion,
+                browserName,
+                browserVersion,
+                userAgent: ua,
+                screen: {
+                    width: window.screen.width,
+                    height: window.screen.height,
+                    innerWidth: window.innerWidth,
+                    innerHeight: window.innerHeight
+                },
+                language: navigator.language || navigator.userLanguage,
+                online: navigator.onLine
+            };
+        }
+
+        // ====== CONTOH PAKAI ======
+        const info = getDeviceInfo();
+        console.log(info);
+
+        // tampilkan di halaman
+        document.getElementById('output').textContent = JSON.stringify(info, null, 2);
+    </script>
+</body>
+</html>
